@@ -160,8 +160,8 @@ function drawSvg() {
         .attr("data-value", dataset.value)
         .each(function() {
           d3.select("#movie-title").text(dataset.name).style("font-weight", "bold");
-          d3.select("#movie-category").text(dataset.category);
-          d3.select("#movie-value").text(dataset.value);
+          d3.select("#movie-category").text(dataset.category).style("font-style", "oblique");
+          d3.select("#movie-value").text(d3.format("$,")(dataset.value));
         })
       ;
     })
