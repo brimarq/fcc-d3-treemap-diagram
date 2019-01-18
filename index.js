@@ -34,6 +34,21 @@ svgProps.innerHeight = svgProps.outerHeight - svgProps.margin.top - svgProps.mar
 function drawSvg() {
   console.log(data);
 
+  /** Create hidden tooltip div */
+  const tooltip = d3.select("body")
+    .append("div")
+    .attr("id", "tooltip")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("background", "hsla(0, 0%, 0%, .8)")
+    .style("visibility", "hidden")
+    .each(function() {
+      d3.select(this).append("span").attr("id", "movie-title");
+      d3.select(this).append("span").attr("id", "movie-category");
+      d3.select(this).append("span").attr("id", "movie-value");
+    })
+  ;
+
   const colors = d3.scaleOrdinal()
     .range(['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69'])
     .domain(data.children.map(x => x.name))
@@ -124,6 +139,42 @@ function drawSvg() {
     })
     // .call(wrap, d3.select("rect.tile").attr("width") - 2)
     // .call(textwrap);
+  ;
+
+  
+  treemap.selectAll("div")
+    .on("mouseover", function(d) {
+      // let dataset = this.dataset 
+      let dataset = d.data;
+      // name = dataset.name,
+      // category = dataset.category,
+      // value = dataset.value,
+      ;
+
+      d3.select(this).style("outline", "1px solid lime");
+      // d3.select(this).attr("stroke", "lime");
+      // d3.select(this).attr("stroke-width", 1.5);
+      
+      tooltip
+        .style("visibility", "visible")
+        .attr("data-value", dataset.value)
+        .each(function() {
+          d3.select("#movie-title").text(dataset.name).style("font-weight", "bold");
+          d3.select("#movie-category").text(dataset.category);
+          d3.select("#movie-value").text(dataset.value);
+        })
+      ;
+    })
+    .on("mousemove", function(d) { 
+      tooltip
+        .style("top", (d3.event.pageY - 70) + "px")
+        .style("left", (d3.event.pageX + 20) + "px");
+    })
+    .on("mouseout", function() {
+      d3.select(this).style("outline", "none");
+      // d3.select(this).attr("stroke", "none");
+      tooltip.style("visibility", "hidden");
+    })
   ;
 
 
