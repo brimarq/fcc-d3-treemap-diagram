@@ -34,6 +34,11 @@ svgProps.innerHeight = svgProps.outerHeight - svgProps.margin.top - svgProps.mar
 function drawSvg() {
   console.log(data);
 
+  const colors = d3.scaleOrdinal()
+    .range(['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69'])
+    .domain(data.children.map(x => x.name))
+  ;
+
   const svg = d3.select("main div#svg-container")
     .append("svg")
     .attr("width", svgProps.outerWidth)
@@ -93,16 +98,16 @@ function drawSvg() {
     .attr("data-name", (d) => d.data.name)
     .attr("data-category", (d) => d.data.category)
     .attr("data-value", (d) => d.data.value)
-    .attr("fill", "#999")
+    .attr("fill", (d) => colors(d.data.category))
   ;
 
-  const textwrap = d3.textwrap()
-    .bounds(function() {
-      // console.log(this);
-      let obj = {height: 100, width: 100}
-      return obj;
-    })
-  ;
+  // const textwrap = d3.textwrap()
+  //   .bounds(function() {
+  //     // console.log(this);
+  //     let obj = {height: 100, width: 100}
+  //     return obj;
+  //   })
+  // ;
 
   leaves.append("text").text((d) => d.data.name)
     // .attr("textLength", (d) => (d.x1 - d.x0))
@@ -111,7 +116,7 @@ function drawSvg() {
     // .attr("y", 2)
     // .attr("dy", "1.1em")
     .each(function(d) {
-      console.log(this);
+      // console.log(this);
       let w = d.x1 - d.x0;
       let h = d.y1 - d.y0;
       let wrap = d3.textwrap().bounds({height: h, width: w}).padding(5);
@@ -127,29 +132,29 @@ function drawSvg() {
    * Credit: Mike Bostock
    * http://bl.ocks.org/mbostock/7555321
   */
-  function wraps(text, width) {
-    text.each(function() {
-      // console.log(this);
-      let text = d3.select(this),
-          words = text.text().split(/\s+/).reverse(),
-          word,
-          line = [],
-          lineNumber = 0,
-          lineHeight = 1.1, // ems
-          y = text.attr("y"),
-          dy = parseFloat(text.attr("dy")),
-          tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
-      while (word = words.pop()) {
-        line.push(word);
-        tspan.text(line.join(" "));
-        if (tspan.node().getComputedTextLength() > width) {
-          line.pop();
-          tspan.text(line.join(" "));
-          line = [word];
-          tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
-        }
-      }
-    });
-  }
+  // function wraps(text, width) {
+  //   text.each(function() {
+  //     // console.log(this);
+  //     let text = d3.select(this),
+  //         words = text.text().split(/\s+/).reverse(),
+  //         word,
+  //         line = [],
+  //         lineNumber = 0,
+  //         lineHeight = 1.1, // ems
+  //         y = text.attr("y"),
+  //         dy = parseFloat(text.attr("dy")),
+  //         tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+  //     while (word = words.pop()) {
+  //       line.push(word);
+  //       tspan.text(line.join(" "));
+  //       if (tspan.node().getComputedTextLength() > width) {
+  //         line.pop();
+  //         tspan.text(line.join(" "));
+  //         line = [word];
+  //         tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+  //       }
+  //     }
+  //   });
+  // }
 
 }
