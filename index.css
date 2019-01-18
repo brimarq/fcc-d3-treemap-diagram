@@ -44,3 +44,11 @@ svg {
   background: #fefefe;
   box-shadow: 10px 10px 20px -10px #000;
 }
+
+.leaf > foreignObject > div {
+  font-size: .7em;
+  text-align: left;
+  /* outline: 1px solid red; */
+  overflow: hidden;
+  height: 100%;
+}
