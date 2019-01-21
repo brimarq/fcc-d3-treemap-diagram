@@ -6,40 +6,47 @@ const VIDEO_GAME_SALES = "https://cdn.rawgit.com/freeCodeCamp/testable-projects-
 
 const dataUrls = [KICKSTARTER_PLEDGES, MOVIE_SALES, VIDEO_GAME_SALES];
 
-let data;
+let data = {};
 
-/** Fetch json data, then... */
+/** Fetch json data, then draw svg */
 Promise.all(dataUrls.map(url => d3.json(url)))
   .then((rcvdData) => {
-     
-    
-    data = rcvdData[1];
+    data.ksPledges = rcvdData[0];
+    data.movieSales = rcvdData[1];
+    data.vgameSales = rcvdData[2];
   })
   .then(() => drawSvg())
 ;
 
-/** Set properties for the svg element */
-const svgProps = {};
-svgProps.outerWidth = 1000;
-svgProps.outerHeight = svgProps.outerWidth / 1.6; // 16:10 aspect ratio
-svgProps.margin = {
-  top: svgProps.outerHeight * 0.10, 
-  right: svgProps.outerWidth * 0.03, 
-  bottom: svgProps.outerHeight * 0.10, 
-  left: svgProps.outerWidth * 0.03
-};
-svgProps.innerWidth = svgProps.outerWidth - svgProps.margin.left - svgProps.margin.right;
-svgProps.innerHeight = svgProps.outerHeight - svgProps.margin.top - svgProps.margin.bottom;
-svgProps.title = {
-  x: svgProps.outerWidth / 2,
-  y: svgProps.margin.top / 2,
-  text1: "Movie Sales",
-  text2: "Top 95 Highest Grossing Movies",
-  color: "#222"
-};
-
 function drawSvg() {
-  console.log(data);
+
+  /** Set properties for the svg element */
+  const svgProps = {};
+  svgProps.outerWidth = 1000;
+  svgProps.outerHeight = svgProps.outerWidth / 1.6; // 16:10 aspect ratio
+  svgProps.margin = {
+    top: svgProps.outerHeight * 0.10, 
+    right: svgProps.outerWidth * 0.03, 
+    bottom: svgProps.outerHeight * 0.08, 
+    left: svgProps.outerWidth * 0.03
+  };
+  svgProps.innerWidth = svgProps.outerWidth - svgProps.margin.left - svgProps.margin.right;
+  svgProps.innerHeight = svgProps.outerHeight - svgProps.margin.top - svgProps.margin.bottom;
+  svgProps.title = {
+    x: svgProps.outerWidth / 2,
+    y: svgProps.margin.top / 2,
+    text1: "Movie Sales",
+    text2: "Top 95 Highest Grossing Movies",
+    color: "#222"
+  };
+  svgProps.categories = data.movieSales.children.map(x => x.name);
+  svgProps.categoryColors = ['#66c2a5','#fc8d62','#8da0cb','#e78ac3','#a6d854','#ffd92f','#e5c494'];
+  svgProps.legend = {
+    x: svgProps.margin.left,
+    y: svgProps.outerHeight - (svgProps.margin.bottom / 1.5),
+    itemWidth: svgProps.innerWidth / svgProps.categories.length,
+    squareSize: 15
+  };
 
   /** Create hidden tooltip div */
   const tooltip = d3.select("body")
@@ -47,7 +54,7 @@ function drawSvg() {
     .attr("id", "tooltip")
     .style("position", "absolute")
     .style("z-index", "10")
-    .style("background", "hsla(0, 0%, 0%, .8)")
+    .style("background", "hsla(0, 0%, 0%, .7)")
     .style("visibility", "hidden")
     .each(function() {
       d3.select(this).append("span").attr("id", "movie-title");
@@ -56,9 +63,10 @@ function drawSvg() {
     })
   ;
 
+  // Color scale for categories
   const colors = d3.scaleOrdinal()
-    .range(['#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69'])
-    .domain(data.children.map(x => x.name))
+    .range(svgProps.categoryColors)
+    .domain(svgProps.categories)
   ;
 
   const svg = d3.select("main div#svg-container")
@@ -89,13 +97,14 @@ function drawSvg() {
     .text(svgProps.title.text2)
   ;
 
+  // Create group to hold treemap
   const treemap = svg.append("g")
     .attr("id", "treemap-diagram")
     .attr("transform", "translate(" + svgProps.margin.left + ", " + svgProps.margin.top + ")")
   ;
 
   // Create root node for treemap from hierarchical data
-  const root = d3.hierarchy(data)
+  const root = d3.hierarchy(data.movieSales)
     .sum((d) => d.value)
     // Sort nodes by descending value
     .sort((a, b) => (b.value - a.value))
@@ -115,14 +124,6 @@ function drawSvg() {
    *    node.y1 - the bottom edge of the rectangle
    */
   treemapLayout(root);
-
-  // console.log(root);
-  // console.log(treemapLayout(root));
-  // categories
-  // console.log(data.children.map(x => x.name));
-  // console.log(data);
-
-  // console.log(root.leaves());
 
   // Draw leaves to the treemap
   const leaves = treemap.selectAll("g")
@@ -145,21 +146,13 @@ function drawSvg() {
     .attr("fill", (d) => colors(d.data.category))
   ;
 
-  // const textwrap = d3.textwrap()
-  //   .bounds(function() {
-  //     // console.log(this);
-  //     let obj = {height: 100, width: 100}
-  //     return obj;
-  //   })
-  // ;
-
+  /** Append movie name text to each leaf. 
+   * Uses d3.textwrap  https://github.com/vijithassar/d3-textwrap to 
+   * automatically wrap text by using foreignObject and divs in svg or 
+   * tspans as a fallback if there is no browser support for the former.
+   * */
   leaves.append("text").text((d) => d.data.name)
-    // .attr("textLength", (d) => (d.x1 - d.x0))
-    // .attr("lengthAdjust", "spacingAndGlyphs")
-    
     .style("font-size", ".7em")
-    // .attr("y", 2)
-    // .attr("dy", "1.1em")
     .each(function(d) {
       // console.log(this);
       let w = d.x1 - d.x0;
@@ -174,12 +167,13 @@ function drawSvg() {
   // Add event listeners and adjust tspans in case of textwrap fallback
   leaves
     .on("mouseover", function(d) {
-      
       let dataset = d.data;
   
-      d3.select(this).select('rect').style("outline", "1px solid yellow");
-      // d3.select(this).attr("stroke", "lime");
-      // d3.select(this).attr("stroke-width", 1.5);
+      d3.select(this).select('rect')
+        // .style("outline", "2px solid white")
+        .attr("stroke", "white")
+        .attr("stroke-width", 2)
+      ;
       
       tooltip
         .style("visibility", "visible")
@@ -197,16 +191,57 @@ function drawSvg() {
         .style("left", (d3.event.pageX + 20) + "px");
     })
     .on("mouseout", function() {
-      d3.select(this).select('rect').style("outline", "none");
-      // d3.select(this).attr("stroke", "none");
+      d3.select(this).select('rect')
+        // .style("outline", "none")
+        .attr("stroke", "none")
+      ;
+
       tooltip.style("visibility", "hidden");
     })
     // If fallback tspans are used, adjust tspans down, within the rect
     .select('text tspan').attr('dy', '1em')
   ;
 
+  // Create legend
+  const legend = svg.append("g")
+    .attr("id", "legend")
+  ;
 
-  
+  // Add legend item groups with category data
+  legend.selectAll('g')
+    .data(svgProps.categories)
+    .enter().append('g')
+      .attr("class", "legend-item-group")
+      .attr("transform", (d, i) => {
+        let x = i * svgProps.legend.itemWidth, y = 0;
+        return "translate(" + x + ", " + y + ")"
+      })
+  ;
 
+  // Append rects for the category colors
+  legend.selectAll('g.legend-item-group').append('rect')
+    .attr("class", "legend-item")
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('height', svgProps.legend.squareSize)
+    .attr('width', svgProps.legend.squareSize)
+    .attr('fill', (d) => colors(d))
+  ;
+
+  // Add text showing category types
+  legend.selectAll('g.legend-item-group').append('text')
+    .attr("class", "legend-item-text")
+    .attr('x', svgProps.legend.squareSize + 4)
+    .attr('y', "1em")
+    .style('font-size', ".8em")
+    .text((d) => d)
+  ;
+
+  // Position legend
+  legend.attr('transform', () => {
+    let legendW = legend.node().getBBox().width, 
+    legendX = ((svgProps.innerWidth - legendW) / 2) + svgProps.margin.left;
+    return "translate(" + legendX + ", " + svgProps.legend.y + ")";
+  });
 
 }
